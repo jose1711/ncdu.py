@@ -33,6 +33,15 @@ import os.path
 import stat as _stat
 import sys
 
+
+def check_if_excluded(e):
+    ''' returns True if file/dir is excluded, otherwise Flase '''
+    if args.exclude:
+        for pattern in args.exclude:
+            if fnmatch.filter([e], pattern): return True
+    return False
+
+
 def check_dir(entry):
     path = entry.get('path')
     notreg = entry.get('notreg')
@@ -53,6 +62,11 @@ def check_dir(entry):
         for dirname in dirnames:
             debug(f'processing dir {dirname}..')
             metadata = stat(os.path.join(path, dirname), follow_symlinks=False)
+
+            if check_if_excluded(dirname):
+                debug(f"Not descending to this directory since it's excluded")
+                continue
+
             asize = metadata.st_size
             dsize = metadata.st_blocks * 512
             dev = metadata.st_dev
@@ -83,14 +97,11 @@ def check_dir(entry):
             mtime = int(metadata.st_mtime)
             notreg = not _stat.S_ISREG(mode)
 
-            if args.exclude:
-                for pattern in args.exclude:
-                    if fnmatch.filter([filename], pattern):
-                        debug(f"Resetting {filename}'s size to 0 because of exclude pattern match")
-                        asize = 0
-                        dsize = 0
-                        excluded = True
-                        break
+            if check_if_excluded(filename):
+                debug(f"Resetting {filename}'s size to 0 because of exclude pattern match")
+                asize = 0
+                dsize = 0
+                excluded = True
 
             if args.older_than and (now - mtime) <= int(args.older_than) * 3600 * 24:
                 debug(f'Skipping {filename} due to older_than condition')
