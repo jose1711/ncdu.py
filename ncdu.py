@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 '''
 
 ncdu.py scans a given directory and exports json that can be fed to ncdu
@@ -45,7 +45,7 @@ def check_if_excluded(e):
 def check_dir(entry):
     path = entry.get('path')
     notreg = entry.get('notreg')
-    debug(f'path: {path}, notreg: {notreg}')
+    debug('path: {path}, notreg: {notreg}'.format(**locals()))
     # is this directory a symbolic link?
     if notreg:
         entry['asize'] = 0
@@ -55,23 +55,23 @@ def check_dir(entry):
 
     for rootname, dirnames, filenames in walk(path):
         dirnames = list(dirnames)
-        debug(f'dirnames in {path}: {dirnames}')
+        debug('dirnames in {path}: {dirnames}'.format(**locals()))
         ret = [entry]
         fentries = []
 
         for dirname in dirnames:
-            debug(f'processing dir {dirname}..')
-            metadata = stat(os.path.join(path, dirname), follow_symlinks=False)
+            debug('processing dir {dirname}..'.format(**locals()))
+            metadata = stat(os.path.join(path, dirname))
 
             if check_if_excluded(dirname):
-                debug(f"Not descending to this directory since it's excluded")
+                debug("Not descending to this directory since it's excluded".format(**locals()))
                 continue
 
             asize = metadata.st_size
             dsize = metadata.st_blocks * 512
             dev = metadata.st_dev
             inode = metadata.st_ino
-            notreg = _stat.S_ISLNK(stat(os.path.join(path, dirname), follow_symlinks=False).st_mode)
+            notreg = _stat.S_ISLNK(stat(os.path.join(path, dirname)).st_mode)
             dentry = {"path": os.path.join(path, dirname),
                       "name": bn(dirname),
                       "asize": asize,
@@ -83,7 +83,7 @@ def check_dir(entry):
 
         for filename in filenames:
             try:
-                metadata = stat(os.path.join(path, filename), follow_symlinks=False)
+                metadata = stat(os.path.join(path, filename))
             except:
                 # skip files that cannot be read
                 continue
@@ -98,17 +98,17 @@ def check_dir(entry):
             notreg = not _stat.S_ISREG(mode)
 
             if check_if_excluded(filename):
-                debug(f"Resetting {filename}'s size to 0 because of exclude pattern match")
+                debug("Resetting {filename}'s size to 0 because of exclude pattern match".format(**locals()))
                 asize = 0
                 dsize = 0
                 excluded = True
 
             if args.older_than and (now - mtime) <= int(args.older_than) * 3600 * 24:
-                debug(f'Skipping {filename} due to older_than condition')
+                debug('Skipping {filename} due to older_than condition'.format(**locals()))
                 continue
 
             if args.newer_than and (now - mtime) >= int(args.newer_than) * 3600 * 24:
-                debug(f'Skipping {filename} due to newer_than condition')
+                debug('Skipping {filename} due to newer_than condition'.format(**locals()))
                 continue
 
             fentry = {"path": os.path.join(path, filename),
@@ -124,13 +124,13 @@ def check_dir(entry):
                 fentry['hlnkc'] = True
             if excluded:
                 fentry['excluded'] = 'pattern'
-            debug(f'filename: {filename}')
+            debug('filename: {filename}'.format(**locals()))
             fentries.append(fentry)
 
-        debug(f'fentries: {fentries}')
+        debug('fentries: {fentries}'.format(**locals()))
         if fentries: ret.extend(fentries)
 
-        debug(f'returning: {ret}')
+        debug('returning: {ret}'.format(**locals()))
         return ret
 
     # looks like the path is unreadable (permission issue?)
